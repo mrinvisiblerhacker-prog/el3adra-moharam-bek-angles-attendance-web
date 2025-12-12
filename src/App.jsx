@@ -41,7 +41,7 @@ function Login() {
       <Card className="w-full max-w-md shadow-2xl rounded-2xl p-4 backdrop-blur-md bg-white/80">
         <CardContent>
           <h1 className="text-3xl font-bold mb-2 text-center text-red-900">ملائكة كنيسة السيدة العذراء – محرم بك</h1>
-          <h2 className="text-lg font-semibold text-center mb-4 text-gray-700"></h2>ابليكيشن مخدوم (يرجي تسجيل الدخول للتأكد)</h2>
+          <h2 className="text-lg font-semibold text-center mb-4 text-gray-700">ابليكيشن مخدوم (يرجي تسجيل الدخول)</h2>
           {error && <p className="text-center text-red-600 mb-2">{error}</p>}
           <div className="space-y-3">
             <input onChange={(e) => setUser(e.target.value)} placeholder="اسم المستخدم" className="w-full p-3 border rounded-xl" />
