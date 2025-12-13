@@ -74,6 +74,11 @@ export default function MassPage() {
   };
 
   const deleteChild = async (childId) => {
+    const confirmDelete = window.confirm(
+      "⚠️ تحذير!\nهل أنت متأكد من حذف بيانات هذا الطفل؟\nلن يمكن استرجاع البيانات بعد الحذف."
+    );
+    if (!confirmDelete) return;
+
     const docRef = doc(db, "mass", childId);
     try {
       await deleteDoc(docRef);
@@ -147,7 +152,9 @@ export default function MassPage() {
   return (
     <div className="min-h-screen p-6">
       <div className="bg-white p-6 rounded-2xl shadow-xl">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-red-900">⛪ حضور الأطفال القداس</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-red-900">
+          ⛪ حضور الأطفال القداس
+        </h1>
 
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <input
