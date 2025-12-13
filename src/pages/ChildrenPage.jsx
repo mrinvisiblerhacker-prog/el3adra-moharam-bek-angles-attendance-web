@@ -34,15 +34,15 @@ export default function ChildrenPage() {
     const fetchData = async () => {
       try {
         const snapshot = await getDocs(childrenCollection);
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name || "",
-          phone: doc.data().phone || "",
-          address: doc.data().address || "",
-          dateOfBirth: doc.data().dateOfBirth || "",
-          stage: doc.data().stage || "",
-          birthCertificate: doc.data().birthCertificate || "",
-          visited: doc.data().visited || {}
+        const data = snapshot.docs.map(docSnap => ({
+          id: docSnap.id,
+          name: docSnap.data().name || "",
+          phone: docSnap.data().phone || "",
+          address: docSnap.data().address || "",
+          dateOfBirth: docSnap.data().dateOfBirth || "",
+          stage: docSnap.data().stage || "",
+          birthCertificate: docSnap.data().birthCertificate || "",
+          visited: docSnap.data().visited || {}
         }));
         setRows(data);
       } catch (error) {
@@ -90,7 +90,13 @@ export default function ChildrenPage() {
     }));
   };
 
+  // ✅ تعديل الحذف: رسالة تحذير قبل الحذف
   const handleDelete = async (id) => {
+    const ok = window.confirm(
+      "⚠️ تحذير!\nهل أنت متأكد من حذف بيانات هذا الطفل؟\nلن يمكن استرجاع البيانات بعد الحذف."
+    );
+    if (!ok) return;
+
     const docRef = doc(db, "children", id);
     try {
       await deleteDoc(docRef);
@@ -157,7 +163,7 @@ export default function ChildrenPage() {
 
   const filteredRows = rows
     .filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => a.name.localeCompare(b.name, "ar")); 
+    .sort((a, b) => a.name.localeCompare(b.name, "ar"));
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -186,14 +192,14 @@ export default function ChildrenPage() {
           />
 
           <div className="flex gap-2 flex-wrap items-center">
-            <button onClick={addRow} className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition text-sm md:text-base">
+            <button onClick={addRow} className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition">
               ➕ إضافة صف جديد
             </button>
-            <label className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 cursor-pointer transition text-sm md:text-base">
+            <label className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 cursor-pointer transition">
               ⬆️ Upload Excel
               <input type="file" accept=".xlsx, .xls" onChange={handleUpload} className="hidden" />
             </label>
-            <button onClick={handleReset} className="px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition text-sm md:text-base">
+            <button onClick={handleReset} className="px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
               🔄 إعادة ضبط الزيارات
             </button>
           </div>
@@ -219,14 +225,14 @@ export default function ChildrenPage() {
               {currentRows.map((row, index) => (
                 <tr key={row.id} className="even:bg-gray-100 text-lg">
                   <td className="p-3">{indexOfFirstRow + index + 1}</td>
-                  <td className="p-3"><input type="text" value={row.name} onChange={e => handleChange(row.id, "name", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="text" value={row.phone} onChange={e => handleChange(row.id, "phone", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="text" value={row.address} onChange={e => handleChange(row.id, "address", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="text" value={row.dateOfBirth} onChange={e => handleChange(row.id, "dateOfBirth", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="text" value={row.stage} onChange={e => handleChange(row.id, "stage", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="text" value={row.birthCertificate} onChange={e => handleChange(row.id, "birthCertificate", e.target.value)} className="w-full p-1 border rounded" /></td>
-                  <td className="p-3"><input type="checkbox" checked={row.visited[selectedMonth] || false} onChange={e => handleChange(row.id, "visited", e.target.checked)} className="w-6 h-6 md:w-7 md:h-7" /></td>
-                  <td className="p-3"><button onClick={() => handleDelete(row.id)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition">❌</button></td>
+                  <td className="p-3"><input value={row.name} onChange={e => handleChange(row.id, "name", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input value={row.phone} onChange={e => handleChange(row.id, "phone", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input value={row.address} onChange={e => handleChange(row.id, "address", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input value={row.dateOfBirth} onChange={e => handleChange(row.id, "dateOfBirth", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input value={row.stage} onChange={e => handleChange(row.id, "stage", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input value={row.birthCertificate} onChange={e => handleChange(row.id, "birthCertificate", e.target.value)} className="w-full p-1 border rounded" /></td>
+                  <td className="p-3"><input type="checkbox" checked={row.visited[selectedMonth] || false} onChange={e => handleChange(row.id, "visited", e.target.checked)} className="w-6 h-6" /></td>
+                  <td className="p-3"><button onClick={() => handleDelete(row.id)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">❌</button></td>
                 </tr>
               ))}
             </tbody>
@@ -234,21 +240,9 @@ export default function ChildrenPage() {
         </div>
 
         <div className="flex justify-center mt-4 gap-2">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 transition"
-            disabled={currentPage === 1}
-          >
-            السابق
-          </button>
+          <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">السابق</button>
           <span className="px-3 py-1 bg-gray-200 rounded">{currentPage} / {totalPages}</span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 transition"
-            disabled={currentPage === totalPages}
-          >
-            التالي
-          </button>
+          <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">التالي</button>
         </div>
       </div>
     </div>
