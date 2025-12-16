@@ -63,7 +63,10 @@ export default function MassPage() {
     setChildren(prev =>
       prev.map(c => {
         if (c.id === childId) {
-          const updatedDays = { ...c.days, [selectedDate]: { ...c.days[selectedDate], [field]: checked } };
+          const updatedDays = {
+            ...c.days,
+            [selectedDate]: { ...c.days[selectedDate], [field]: checked }
+          };
           const docRef = doc(db, "mass", childId);
           debounceUpdate(docRef, selectedDate, field, checked);
           return { ...c, days: updatedDays };
@@ -94,7 +97,10 @@ export default function MassPage() {
     try {
       const updatedChildren = [];
       for (const c of children) {
-        const updatedDays = { ...c.days, [selectedDate]: { present: false, absent: false } };
+        const updatedDays = {
+          ...c.days,
+          [selectedDate]: { present: false, absent: false }
+        };
         const docRef = doc(db, "mass", c.id);
         await updateDoc(docRef, { [`days.${selectedDate}`]: updatedDays[selectedDate] });
         updatedChildren.push({ ...c, days: updatedDays });
@@ -138,6 +144,15 @@ export default function MassPage() {
     };
     reader.readAsArrayBuffer(file);
     e.target.value = "";
+  };
+
+  // ✅ الإضافة فقط: عدد مرات الحضور في الشهر
+  const getMonthlyAttendanceCount = (child) => {
+    const [year, month] = selectedDate.split("-");
+    return Object.entries(child.days || {}).filter(
+      ([date, data]) =>
+        date.startsWith(`${year}-${month}`) && data.present === true
+    ).length;
   };
 
   const filteredChildren = children
@@ -190,13 +205,14 @@ export default function MassPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border shadow rounded-xl text-center min-w-[500px]">
+          <table className="w-full border shadow rounded-xl text-center min-w-[600px]">
             <thead className="bg-red-800 text-white text-lg sticky top-0">
               <tr>
                 <th className="p-3 w-12">#</th>
                 <th className="p-3 w-60">اسم الطفل</th>
                 <th className="p-3 w-24">حضور ✅</th>
                 <th className="p-3 w-24">غياب ❌</th>
+                <th className="p-3 w-32">عدد الحضور بالشهر</th>
                 <th className="p-3 w-16">حذف</th>
               </tr>
             </thead>
@@ -222,6 +238,9 @@ export default function MassPage() {
                         checked={dayData.absent}
                         onChange={e => handleCheckboxChange(child.id, "absent", e.target.checked)}
                       />
+                    </td>
+                    <td className="p-3 font-bold text-green-700">
+                      {getMonthlyAttendanceCount(child)}
                     </td>
                     <td className="p-3">
                       <button
