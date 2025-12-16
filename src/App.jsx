@@ -26,6 +26,8 @@ function Login() {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstall, setShowInstall] = useState(false);
 
   function handleLogin() {
     if (user === AUTH_USERNAME && pass === AUTH_PASSWORD) {
@@ -35,6 +37,37 @@ function Login() {
       setError("❌ بيانات غير صحيحة");
     }
   }
+
+  useEffect(() => {
+    // تغيير اسم التاب
+    document.title = "ابليكيشن مخدوم";
+
+    // تغيير أيقونة التاب
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.href = "/favicon.ico";
+    document.head.appendChild(link);
+
+    // قبل تثبيت PWA
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        setDeferredPrompt(null);
+        setShowInstall(false);
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[url('/church-bg.jpg')] bg-cover bg-center p-4">
@@ -48,6 +81,12 @@ function Login() {
             <input onChange={(e) => setPass(e.target.value)} placeholder="كلمة المرور" type="password" className="w-full p-3 border rounded-xl" />
           </div>
           <Button className="w-full mt-4" onClick={handleLogin}>تسجيل الدخول</Button>
+
+          {showInstall && (
+            <button onClick={handleInstall} className="w-full mt-4 px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg">
+              ➕ Install App
+            </button>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -82,43 +121,10 @@ function Dashboard() {
   );
 }
 
-// Install Button
-function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showButton, setShowButton] = useState(false);
-
-  useEffect(() => {
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowButton(true);
-    });
-  }, []);
-
-  const handleInstall = () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        setDeferredPrompt(null);
-        setShowButton(false);
-      });
-    }
-  };
-
-  if (!showButton) return null;
-
-  return (
-    <button onClick={handleInstall} className="fixed bottom-4 right-4 px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg">
-      ➕ Install App
-    </button>
-  );
-}
-
 // Main App
 export default function App() {
   return (
     <Router>
-      <InstallButton />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
