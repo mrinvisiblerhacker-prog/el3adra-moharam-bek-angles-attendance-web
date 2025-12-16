@@ -63,9 +63,11 @@ export default function AttendancePage() {
     setChildren(prev =>
       prev.map(c => {
         if (c.id === childId) {
-          const updatedDays = { ...c.days, [selectedDate]: { ...c.days[selectedDate], [field]: checked } };
-          const docRef = doc(db, "attendance", childId);
-          debounceUpdate(docRef, selectedDate, field, checked);
+          const updatedDays = {
+            ...c.days,
+            [selectedDate]: { ...c.days[selectedDate], [field]: checked }
+          };
+          debounceUpdate(doc(db, "attendance", childId), selectedDate, field, checked);
           return { ...c, days: updatedDays };
         }
         return c;
@@ -79,9 +81,8 @@ export default function AttendancePage() {
     );
     if (!confirmDelete) return;
 
-    const docRef = doc(db, "attendance", childId);
     try {
-      await deleteDoc(docRef);
+      await deleteDoc(doc(db, "attendance", childId));
       setChildren(prev => prev.filter(c => c.id !== childId));
     } catch (error) {
       console.error("خطأ في حذف الطفل:", error);
@@ -94,9 +95,13 @@ export default function AttendancePage() {
     try {
       const updatedChildren = [];
       for (const c of children) {
-        const updatedDays = { ...c.days, [selectedDate]: { present: false, absent: false } };
-        const docRef = doc(db, "attendance", c.id);
-        await updateDoc(docRef, { [`days.${selectedDate}`]: updatedDays[selectedDate] });
+        const updatedDays = {
+          ...c.days,
+          [selectedDate]: { present: false, absent: false }
+        };
+        await updateDoc(doc(db, "attendance", c.id), {
+          [`days.${selectedDate}`]: updatedDays[selectedDate]
+        });
         updatedChildren.push({ ...c, days: updatedDays });
       }
       setChildren(updatedChildren);
@@ -114,49 +119,54 @@ export default function AttendancePage() {
     reader.onload = async (evt) => {
       const data = new Uint8Array(evt.target.result);
       const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
       for (let i = 1; i < jsonData.length; i++) {
-        const row = jsonData[i];
-        if (!row || row.every(cell => !cell)) continue;
-        const name = row[0] || "";
+        const name = jsonData[i][0];
         if (!name) continue;
 
         const childId = name.replace(/\s+/g, "_") + "_" + Date.now();
-        const newChild = { name, days: {} };
-
-        try {
-          const docRef = doc(db, "attendance", childId);
-          await setDoc(docRef, newChild);
-          setChildren(prev => [...prev, { id: childId, name, days: {} }]);
-        } catch (error) {
-          console.error("خطأ في إضافة الاسم من Excel:", error);
-        }
+        await setDoc(doc(db, "attendance", childId), { name, days: {} });
+        setChildren(prev => [...prev, { id: childId, name, days: {} }]);
       }
     };
     reader.readAsArrayBuffer(file);
     e.target.value = "";
   };
 
-  const filteredChildren = useMemo(() => 
-    children
-      .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name, "ar")),
+  const filteredChildren = useMemo(
+    () =>
+      children
+        .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name, "ar")),
     [children, search]
   );
 
   const totalPages = Math.ceil(filteredChildren.length / rowsPerPage);
-  const currentData = filteredChildren.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const currentData = filteredChildren.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  // ⭐ حساب عدد مرات الحضور في نفس الشهر
+  const getMonthlyAttendanceCount = (child) => {
+    const [year, month] = selectedDate.split("-");
+    return Object.entries(child.days || {}).filter(
+      ([date, d]) =>
+        date.startsWith(`${year}-${month}`) && d.present === true
+    ).length;
+  };
 
   return (
     <div className="min-h-screen p-6">
       <div className="backdrop-blur-md bg-white/90 p-6 rounded-2xl shadow-xl">
+
         <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-red-900">
           📘 حضور الأطفال لمدارس الأحد
         </h1>
 
+        {/* الأدوات العلوية */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <input
             type="text"
@@ -169,66 +179,72 @@ export default function AttendancePage() {
             type="date"
             value={selectedDate}
             onChange={e => setSelectedDate(e.target.value)}
-            className="p-2 border rounded-xl w-full md:w-auto"
+            className="p-2 border rounded-xl"
           />
           <input
             type="text"
             placeholder="اضافة اسم الطفل..."
             value={newChildName}
             onChange={e => setNewChildName(e.target.value)}
-            className="p-2 border rounded-xl w-full md:w-auto"
+            className="p-2 border rounded-xl"
           />
-          <button onClick={addChild} className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition">
+          <button onClick={addChild} className="px-4 py-2 bg-green-500 text-white rounded-xl">
             ➕ إضافة طفل
           </button>
-          <label className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 cursor-pointer transition">
+          <label className="px-4 py-2 bg-blue-500 text-white rounded-xl cursor-pointer">
             ⬆️ Upload Excel
-            <input type="file" accept=".xlsx, .xls" onChange={handleUpload} className="hidden" />
+            <input type="file" accept=".xlsx,.xls" onChange={handleUpload} className="hidden" />
           </label>
-          <button onClick={resetAttendance} className="px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition">
+          <button onClick={resetAttendance} className="px-4 py-2 bg-yellow-500 text-white rounded-xl">
             🔄 إعادة ضبط الحضور
           </button>
         </div>
 
+        {/* الجدول */}
         <div className="overflow-x-auto">
-          <table className="w-full border shadow rounded-xl text-center min-w-[500px]">
-            <thead className="bg-red-800 text-white text-lg sticky top-0">
+          <table className="w-full border shadow rounded-xl text-center min-w-[650px]">
+            <thead className="bg-red-800 text-white text-lg">
               <tr>
-                <th className="p-3 w-12">#</th>
-                <th className="p-3 w-60">اسم الطفل</th>
-                <th className="p-3 w-24">حضور ✅</th>
-                <th className="p-3 w-24">غياب ❌</th>
-                <th className="p-3 w-16">حذف</th>
+                <th className="p-3">#</th>
+                <th className="p-3">اسم الطفل</th>
+                <th className="p-3">حضور ✅</th>
+                <th className="p-3">غياب ❌</th>
+                <th className="p-3">عدد الحضور بالشهر</th>
+                <th className="p-3">حذف</th>
               </tr>
             </thead>
             <tbody>
               {currentData.map((child, idx) => {
-                const dayData = child.days[selectedDate] || { present: false, absent: false };
+                const dayData = child.days[selectedDate] || {};
                 const realIndex = (currentPage - 1) * rowsPerPage + idx;
+
                 return (
-                  <tr key={child.id} className="even:bg-gray-100 hover:bg-gray-200 transition">
+                  <tr key={child.id} className="even:bg-gray-100 hover:bg-gray-200">
                     <td className="p-3">{realIndex + 1}</td>
                     <td className="p-3 text-left">{child.name}</td>
                     <td className="p-3">
                       <input
                         type="checkbox"
-                        className="w-7 h-7"
-                        checked={dayData.present}
+                        className="w-6 h-6"
+                        checked={dayData.present || false}
                         onChange={e => handleCheckboxChange(child.id, "present", e.target.checked)}
                       />
                     </td>
                     <td className="p-3">
                       <input
                         type="checkbox"
-                        className="w-7 h-7"
-                        checked={dayData.absent}
+                        className="w-6 h-6"
+                        checked={dayData.absent || false}
                         onChange={e => handleCheckboxChange(child.id, "absent", e.target.checked)}
                       />
+                    </td>
+                    <td className="p-3 font-bold text-blue-700">
+                      {getMonthlyAttendanceCount(child)}
                     </td>
                     <td className="p-3">
                       <button
                         onClick={() => deleteChild(child.id)}
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                        className="px-2 py-1 bg-red-500 text-white rounded"
                       >
                         ❌
                       </button>
@@ -240,6 +256,7 @@ export default function AttendancePage() {
           </table>
         </div>
 
+        {/* ✅ Pagination رجعت */}
         <div className="flex justify-center items-center mt-4 gap-2">
           <button
             disabled={currentPage === 1}
