@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,8 +7,12 @@
     <!-- اسم التطبيق في التاب -->
     <title>ابليكيشن مخدوم</title>
 
-    <!-- أيقونة التاب -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- أيقونات التاب لكل المتصفحات -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="theme-color" content="#ff6600">
 
     <!-- Firebase SDKs -->
     <script defer src="/__/firebase/12.6.0/firebase-app-compat.js"></script>
@@ -21,10 +25,9 @@
     <script defer src="/__/firebase/12.6.0/firebase-analytics-compat.js"></script>
     <script defer src="/__/firebase/12.6.0/firebase-remote-config-compat.js"></script>
     <script defer src="/__/firebase/12.6.0/firebase-performance-compat.js"></script>
-
     <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
-    <style media="screen">
+    <style>
       body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
       #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
       #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
