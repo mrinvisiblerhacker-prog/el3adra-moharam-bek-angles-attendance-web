@@ -67,7 +67,21 @@ export default function AttendancePage() {
             ...c.days,
             [selectedDate]: { ...c.days[selectedDate], [field]: checked }
           };
-          debounceUpdate(doc(db, "attendance", childId), selectedDate, field, checked);
+
+          const docRef = doc(db, "attendance", childId);
+          debounceUpdate(docRef, selectedDate, field, checked);
+
+          // تحديث MassPage تلقائي إذا كان الحقل حضور القداس
+          if (field === "massPresent") {
+            const massDocRef = doc(db, "mass", childId);
+            setDoc(massDocRef, {
+              name: c.name,
+              days: {
+                [selectedDate]: { present: checked }
+              }
+            }, { merge: true });
+          }
+
           return { ...c, days: updatedDays };
         }
         return c;
@@ -97,7 +111,7 @@ export default function AttendancePage() {
       for (const c of children) {
         const updatedDays = {
           ...c.days,
-          [selectedDate]: { present: false, absent: false }
+          [selectedDate]: { present: false, absent: false, massPresent: false }
         };
         await updateDoc(doc(db, "attendance", c.id), {
           [`days.${selectedDate}`]: updatedDays[selectedDate]
@@ -149,12 +163,10 @@ export default function AttendancePage() {
     currentPage * rowsPerPage
   );
 
-  // ⭐ حساب عدد مرات الحضور في نفس الشهر
   const getMonthlyAttendanceCount = (child) => {
     const [year, month] = selectedDate.split("-");
     return Object.entries(child.days || {}).filter(
-      ([date, d]) =>
-        date.startsWith(`${year}-${month}`) && d.present === true
+      ([date, d]) => date.startsWith(`${year}-${month}`) && d.present === true
     ).length;
   };
 
@@ -166,7 +178,6 @@ export default function AttendancePage() {
           📘 حضور الأطفال لمدارس الأحد
         </h1>
 
-        {/* الأدوات العلوية */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <input
             type="text"
@@ -200,15 +211,15 @@ export default function AttendancePage() {
           </button>
         </div>
 
-        {/* الجدول */}
         <div className="overflow-x-auto">
-          <table className="w-full border shadow rounded-xl text-center min-w-[650px]">
+          <table className="w-full border shadow rounded-xl text-center min-w-[700px]">
             <thead className="bg-red-800 text-white text-lg">
               <tr>
                 <th className="p-3">#</th>
                 <th className="p-3">اسم الطفل</th>
                 <th className="p-3">حضور ✅</th>
                 <th className="p-3">غياب ❌</th>
+                <th className="p-3">حضور القداس ⛪</th>
                 <th className="p-3">عدد الحضور بالشهر</th>
                 <th className="p-3">حذف</th>
               </tr>
@@ -238,9 +249,15 @@ export default function AttendancePage() {
                         onChange={e => handleCheckboxChange(child.id, "absent", e.target.checked)}
                       />
                     </td>
-                    <td className="p-3 font-bold text-blue-700">
-                      {getMonthlyAttendanceCount(child)}
+                    <td className="p-3">
+                      <input
+                        type="checkbox"
+                        className="w-6 h-6"
+                        checked={dayData.massPresent || false}
+                        onChange={e => handleCheckboxChange(child.id, "massPresent", e.target.checked)}
+                      />
                     </td>
+                    <td className="p-3 font-bold text-blue-700">{getMonthlyAttendanceCount(child)}</td>
                     <td className="p-3">
                       <button
                         onClick={() => deleteChild(child.id)}
@@ -256,7 +273,6 @@ export default function AttendancePage() {
           </table>
         </div>
 
-        {/* ✅ Pagination رجعت */}
         <div className="flex justify-center items-center mt-4 gap-2">
           <button
             disabled={currentPage === 1}
