@@ -1,5 +1,5 @@
 // src/pages/ChildrenPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "../firebase/firebaseConfig";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { debounce } from "lodash";
@@ -64,15 +64,18 @@ export default function ChildrenPage() {
     }
   };
 
-  const debounceUpdate = debounce(async (id, field, value) => {
-    const docRef = doc(db, "children", id);
-    try {
-      await updateDoc(docRef, { [field]: value });
-    } catch (error) {
-      console.error("خطأ في التحديث:", error);
-      alert("❌ فشل تحديث البيانات");
-    }
-  }, 500);
+  // ✅ debounce ثابت (تحسين الأداء فقط)
+  const debounceUpdate = useRef(
+    debounce(async (id, field, value) => {
+      const docRef = doc(db, "children", id);
+      try {
+        await updateDoc(docRef, { [field]: value });
+      } catch (error) {
+        console.error("خطأ في التحديث:", error);
+        alert("❌ فشل تحديث البيانات");
+      }
+    }, 500)
+  ).current;
 
   const handleChange = (id, field, value) => {
     setRows(prev => prev.map(r => {
@@ -90,7 +93,6 @@ export default function ChildrenPage() {
     }));
   };
 
-  // ✅ تعديل الحذف: رسالة تحذير قبل الحذف
   const handleDelete = async (id) => {
     const ok = window.confirm(
       "⚠️ تحذير!\nهل أنت متأكد من حذف بيانات هذا الطفل؟\nلن يمكن استرجاع البيانات بعد الحذف."
@@ -161,9 +163,12 @@ export default function ChildrenPage() {
     e.target.value = "";
   };
 
-  const filteredRows = rows
-    .filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => a.name.localeCompare(b.name, "ar"));
+  // ✅ useMemo لتحسين الأداء فقط
+  const filteredRows = useMemo(() => {
+    return rows
+      .filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name, "ar"));
+  }, [rows, search]);
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -205,7 +210,10 @@ export default function ChildrenPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto overscroll-contain"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           <table className="w-full border shadow rounded-xl overflow-hidden text-center min-w-[700px]">
             <thead className="bg-red-800 text-white text-lg">
               <tr>
