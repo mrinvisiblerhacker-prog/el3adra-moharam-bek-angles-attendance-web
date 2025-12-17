@@ -15,7 +15,7 @@ export default function ChildrenPage() {
     return `${year}-${month}`;
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 20;
+  const rowsPerPage = 10;
 
   const childrenCollection = collection(db, "children");
 
@@ -256,3 +256,4 @@ export default function ChildrenPage() {
     </div>
   );
 }
+
